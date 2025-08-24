@@ -7,7 +7,7 @@ import org.jsoup.nodes.Document;
 import java.io.IOException;
 
 public class Fetcher {
-    public void fetch(String url) {
+    public String fetch(String url) {
         int maxRetries = 3;
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
@@ -18,33 +18,23 @@ public class Fetcher {
                         .ignoreHttpErrors(true) // Don't throw exception on HTTP errors
                         .followRedirects(true);
 
-                //Document docs = Jsoup.connect(url).get();
                 Connection.Response response = connection.execute();
+                Document doc = response.parse();
                 if (response.statusCode() != 200) {
                     System.err.println("HTTP " + response.statusCode() + " for: " + url);
-                    return; // Or handle differently
+
+                    return doc.html();
+                }
+                else {
+                    System.err.println("Failed to fetch "+ doc.connection().response().statusCode() + " for: " + url );
+                    return null;
                 }
 
-                Document doc = response.parse();
-                System.out.println("Successfully fetched: " + url);
-                System.out.println("Title: " + doc.title());
-                return;
+                //return;
             } catch (IOException e) {
                 System.err.println("Attempt " + attempt + " failed for '" + url + "': " + e.getMessage());
-
-                if (attempt == maxRetries) {
-                    System.err.println("All attempts failed for: " + url);
-                    return;
-                }
-
-                // Wait before retrying
-                try {
-                    Thread.sleep(2000 * attempt);
-                } catch (InterruptedException ie) {
-                    Thread.currentThread().interrupt();
-                    return;
-                }
             }
         }
+        return null;
     }
 }
